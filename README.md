@@ -7,6 +7,8 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-app-ff4b4b)](https://streamlit.io/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+**Live demo:** https://support-rag-agent.streamlit.app/
+
 ---
 
 ## Why this exists
@@ -17,7 +19,7 @@ Most "RAG demo" repos hallucinate sources and forget what the user just said. Th
 - **It actually remembers.** Ask "Do you ship to India?" then "How much does that cost?" — the second question resolves correctly using conversation history, not a fresh, context-free query.
 - **It fails safely.** No API key configured, missing data, or an unanswerable question — the agent tells you plainly instead of guessing.
 
-## How it works
+## Architecture
 
 ```
 User question
@@ -36,7 +38,7 @@ Per-session memory          →  both the rewrite step and the answer step see t
                                full chat history, keyed by session_id
 ```
 
-## Project layout
+### Project layout
 
 | Path | Responsibility |
 |---|---|
@@ -46,8 +48,9 @@ Per-session memory          →  both the rewrite step and the answer step see t
 | `src/chat_agent.py` | `SupportAgent` — wraps LangChain's retrieval + memory chains behind one `.ask()` call |
 | `tests/test_knowledge_base.py` | Unit tests for the FAQ parser, no network or API key required |
 | `data/gigacorp_faq.txt` | Mock knowledge base: shipping, returns, hours, tiers, tracking, billing |
+| `requirements.txt` | All Python dependencies, pinned to exact versions |
 
-## Tech stack
+### Tech stack
 
 | Layer | Choice | Why |
 |---|---|---|
@@ -57,40 +60,68 @@ Per-session memory          →  both the rewrite step and the answer step see t
 | Embeddings | `sentence-transformers/all-MiniLM-L6-v2` | Runs locally — no embedding API key or cost |
 | UI | Streamlit | Free hosting, minimal boilerplate, ships in one file |
 
-## Citation design
+### Citation design
 
 The FAQ is split by `## Section` headers. Each chunk retains `source`, `section`, and `line_start` metadata, which is rendered back into the LLM's context and enforced in the system prompt — the model is instructed to cite only sections that actually appear in front of it, never to invent one:
 
 > Shipping to India costs $24.99 *(Source: gigacorp_faq.txt, Section: "Shipping Policy", line ~1)*.
 
-## Quickstart
+---
 
+## Setup Instructions
+
+**Prerequisites:** Python 3.12, a free [Groq API key](https://console.groq.com/keys) (or an OpenAI/Anthropic key if you prefer).
+
+**1. Clone the repository**
 ```bash
 git clone https://github.com/kailashv2/support-rag-agent.git
 cd support-rag-agent
-
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\Activate.ps1
-
-pip install -r requirements.txt
-cp .env.example .env            # add GROQ_API_KEY, or paste it in the sidebar instead
-
-streamlit run app.py
 ```
 
-## Tests
+**2. Create and activate a virtual environment**
+```bash
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\Activate.ps1
+```
 
+**3. Install dependencies**
+
+All dependencies are listed in `requirements.txt`, pinned to exact versions for reproducibility:
+```bash
+pip install -r requirements.txt
+```
+
+**4. Configure your API key**
+
+Copy the example env file and add your key:
+```bash
+cp .env.example .env
+```
+Open `.env` and set:
+```
+GROQ_API_KEY=your-key-here
+```
+Alternatively, skip this and paste the key directly into the app's sidebar at runtime.
+
+**5. Run the app**
+```bash
+streamlit run app.py
+```
+Opens at `http://localhost:8501`.
+
+**6. Run the tests** (optional but recommended)
 ```bash
 pytest tests/ -v
 ```
-
 Covers section parsing, metadata integrity, and failure handling on malformed input — no API key or network call required.
+
+---
 
 ## Deploy free — Streamlit Community Cloud
 
 1. Push this repo to GitHub.
 2. [share.streamlit.io](https://share.streamlit.io) → **New app** → select this repo, branch `main`, file `app.py`.
-3. **Advanced settings → Secrets:**
+3. Under **Advanced settings**, set the Python version to **3.12** and add a secret:
 ```toml
    GROQ_API_KEY = "your-key-here"
 ```
