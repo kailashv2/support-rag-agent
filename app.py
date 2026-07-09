@@ -17,6 +17,7 @@ from src.knowledge_base import KnowledgeBase
 st.set_page_config(page_title="GigaCorp Support Assistant", page_icon="💬", layout="centered")
 
 PROVIDER_KEY_NAMES = {"groq": "GROQ_API_KEY", "openai": "OPENAI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}
+PROVIDER_LABELS = {"groq": "Groq (Llama 3.3 70B)", "openai": "OpenAI (GPT-4o mini)", "anthropic": "Anthropic (Claude)"}
 
 
 @st.cache_resource(show_spinner="Indexing knowledge base...")
@@ -31,20 +32,30 @@ def _cached_agent(provider: str, api_key: str) -> SupportAgent:
     return SupportAgent(settings, kb)
 
 
+def _server_secret(env_var: str) -> str:
+    try:
+        return st.secrets.get(env_var, "")
+    except Exception:
+        return ""
+
+
 def render_sidebar() -> tuple[str, str]:
     st.sidebar.header("⚙️ Configuration")
-    provider = st.sidebar.selectbox("LLM Provider", list(PROVIDER_KEY_NAMES), index=0)
-    env_var = PROVIDER_KEY_NAMES[provider]
 
-    try:
-        secret_key = st.secrets.get(env_var, "")
-    except Exception:
-        secret_key = ""
+    provider = st.sidebar.selectbox(
+        "LLM Provider", list(PROVIDER_KEY_NAMES), format_func=lambda p: PROVIDER_LABELS[p]
+    )
+    env_var = PROVIDER_KEY_NAMES[provider]
+    secret_key = _server_secret(env_var)
 
     if secret_key:
+        # A server-side key is already configured for this provider — use it
+        # directly. Never echo it back into a widget a visitor could reveal.
         api_key = secret_key
-        st.sidebar.success(f"✅ Using configured {provider} key")
+        st.sidebar.success(f"✅ Using configured {PROVIDER_LABELS[provider]} key")
     else:
+        # No server secret for this provider — let the visitor supply their own
+        # for a one-off test. Never pre-filled, never stored beyond the session.
         api_key = st.sidebar.text_input(env_var, type="password")
 
     st.sidebar.divider()
