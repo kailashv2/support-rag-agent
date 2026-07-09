@@ -1,13 +1,11 @@
 """
 Streamlit chat UI for the GigaCorp Customer Support RAG Agent.
-
 Run:    streamlit run app.py
 Deploy: Streamlit Community Cloud / Hugging Face Spaces (see README.md)
 """
 
 from __future__ import annotations
 
-import os
 import uuid
 
 import streamlit as st
@@ -39,11 +37,15 @@ def render_sidebar() -> tuple[str, str]:
     env_var = PROVIDER_KEY_NAMES[provider]
 
     try:
-        prefilled = st.secrets.get(env_var, "")
+        secret_key = st.secrets.get(env_var, "")
     except Exception:
-        prefilled = os.getenv(env_var, "")
+        secret_key = ""
 
-    api_key = st.sidebar.text_input(env_var, value=prefilled, type="password")
+    if secret_key:
+        api_key = secret_key
+        st.sidebar.success(f"✅ Using configured {provider} key")
+    else:
+        api_key = st.sidebar.text_input(env_var, type="password")
 
     st.sidebar.divider()
     st.sidebar.markdown(
