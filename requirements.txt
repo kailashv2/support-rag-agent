@@ -1,0 +1,12 @@
+streamlit==1.40.2
+langchain==0.3.27
+langchain-community==0.3.27
+langchain-core==0.3.79
+langchain-huggingface==0.3.1
+langchain-groq==0.3.8
+langchain-openai==0.3.28
+langchain-anthropic==0.3.15
+faiss-cpu==1.9.0
+sentence-transformers==3.3.1
+python-dotenv==1.0.1
+pytest==8.3.4
